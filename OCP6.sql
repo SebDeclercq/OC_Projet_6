@@ -33,7 +33,7 @@ CREATE TABLE member (
 CREATE TABLE bill (
     id SERIAL PRIMARY KEY,
     emission_date DATE NOT NULL,
-    total_amout_ati NUMERIC(4, 2) NOT NULL,
+    total_amout_ati NUMERIC(5, 2) NOT NULL,
     order_id INTEGER NOT NULL
 );
 CREATE TABLE order_status (
@@ -46,7 +46,7 @@ CREATE TABLE taken_order (
     address_id INTEGER NOT NULL,
     bill_id INTEGER,
     status_id INTEGER NOT NULL,
-    is_paid BOOLEAN DEFAULT FALSE
+    is_paid BOOLEAN NOT NULL DEFAULT FALSE
 );
 CREATE TABLE product (
     id SERIAL PRIMARY KEY,
@@ -59,7 +59,7 @@ CREATE TABLE pizzeria (
     id SERIAL PRIMARY KEY,
     name TEXT,
     phone_nb TEXT NOT NULL,
-    address_id INTEGER
+    address_id INTEGER NOT NULL
 );
 CREATE TABLE recipe (
     id SERIAL PRIMARY KEY,
@@ -73,8 +73,8 @@ CREATE TABLE catalog_item (
     description TEXT NOT NULL,
     picture_file TEXT,
     unit_price_ati NUMERIC(4, 2) NOT NULL,
-    is_available BOOLEAN,
-    is_displayed BOOLEAN,
+    is_available BOOLEAN NOT NULL DEFAULT FALSE,
+    is_displayed BOOLEAN NOT NULL DEFAULT FALSE,
     recipe_id INTEGER,
     product_id INTEGER -- a catalog_item may be a product with no recipe (sodas, etc.)
 );

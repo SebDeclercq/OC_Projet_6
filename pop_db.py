@@ -5,7 +5,7 @@ import random
 import re
 import time
 import string
-from typing import Callable, List, Dict, Optional, Any, Generator
+from typing import Callable, List, Dict, Optional, Any, Iterator
 from argparse import ArgumentParser, Namespace
 from passlib.hash import pbkdf2_sha256
 from faker import Faker
@@ -220,13 +220,13 @@ class Keyword:
 
 class RandomDataGenerator:
     @staticmethod
-    def addresses(size: int = 10) -> Generator[Address, None, None]:
+    def addresses(size: int = 10) -> Iterator[Address]:
         for i in range(size):
             yield FakeAddress()
 
     @staticmethod
     def members(address_ids: List[int], pizzeria_ids: List[int],
-                size: int = 10) -> Generator[Member, None, None]:
+                size: int = 10) -> Iterator[Member]:
         if len(address_ids) < size:
             raise ValueError('Not enough address_ids')
         pizzeria_ids = [random.choice((None, i)) for i in pizzeria_ids]
@@ -239,7 +239,7 @@ class RandomDataGenerator:
 
     @staticmethod
     def user_accounts(member_ids: List[int], size: int = 10)\
-            -> Generator[UserAccount, None, None]:
+            -> Iterator[UserAccount]:
         if len(member_ids) < size:
             raise ValueError('Not enough member_ids')
         random.shuffle(member_ids)
@@ -249,7 +249,7 @@ class RandomDataGenerator:
     @staticmethod
     def taken_orders(member_ids: List[int], address_ids: List[int],
                      order_status_ids: List[int],
-                     size: int = 10) -> Generator[TakenOrder, None, None]:
+                     size: int = 10) -> Iterator[TakenOrder]:
         if len(member_ids) < size:
             raise ValueError('Not enough member_ids')
         elif len(address_ids) < size:
@@ -263,7 +263,7 @@ class RandomDataGenerator:
 
     @staticmethod
     def bills(taken_order_ids: List[int], size: int = 10)\
-            -> Generator[Bill, None, None]:
+            -> Iterator[Bill]:
         if len(taken_order_ids) < size:
             print(taken_order_ids)
             raise ValueError('Not enough taken_order_ids')
@@ -271,7 +271,7 @@ class RandomDataGenerator:
             yield FakeBill(taken_order_ids[i])
 
     @staticmethod
-    def products() -> Generator[Product, None, None]:
+    def products() -> Iterator[Product]:
         product_names: List[str] = [
             'farine de blé', 'tomate pelée', 'pulpe de tomate',
             'mozzarella', 'ananas', 'parmesan', 'viande hachée de boeuf',
@@ -287,7 +287,7 @@ class RandomDataGenerator:
 
     @staticmethod
     def pizzerias(address_ids: List[Optional[int]])\
-            -> Generator[Pizzeria, None, None]:
+            -> Iterator[Pizzeria]:
         # OC Pizza has currently 5 stores
         pizzeria_names: List[str] = [
             'OC Pizza #1', 'OC Pizza bis', 'The Best of OC Pizza',
@@ -300,7 +300,7 @@ class RandomDataGenerator:
             yield FakePizzeria(name, address_ids[i])
 
     @staticmethod
-    def recipes() -> Generator[Recipe, None, None]:
+    def recipes() -> Iterator[Recipe]:
         recipe_names: List[str] = [
             'Spaghetti bolognaise', 'Pizza regina', 'Pizza calzone',
             'Pizza quatre saisons', 'Pizza de la mer', 'Ravioles au crabe',
@@ -317,14 +317,14 @@ class RandomDataGenerator:
 
     @staticmethod
     def catalog_items(recipes: Dict[str, int])\
-            -> Generator[CatalogItem, None, None]:
+            -> Iterator[CatalogItem]:
         for recipe_name, recipe_id in recipes.items():
             yield FakeCatalogItem(
                 recipe_name, 'recipe', int(recipe_id)
             )
 
     @staticmethod
-    def order_status() -> Generator[OrderStatus, None, None]:
+    def order_status() -> Iterator[OrderStatus]:
         labels: List[str] = [
             'Panier', 'En cours', 'En attente', 'Terminée'
         ]
@@ -332,7 +332,7 @@ class RandomDataGenerator:
             yield OrderStatus(label)
 
     @staticmethod
-    def keywords() -> Generator[Keyword, None, None]:
+    def keywords() -> Iterator[Keyword]:
         labels: List[str] = [
             'pizza', 'pâtes', 'végétarien', 'poisson', 'viande',
             'champignon', 'spaghetti', 'macaroni', 'tagliatelle',
@@ -346,7 +346,7 @@ class RandomDataGenerator:
             yield Keyword(label)
 
     @staticmethod
-    def permissions() -> Generator[Permission, None, None]:
+    def permissions() -> Iterator[Permission]:
         labels: List[str] = [
             'Modifier compte', 'Créer compte', 'Créer commande',
             'Consulter commande tierse', 'Modifier compte tiers',
@@ -355,7 +355,7 @@ class RandomDataGenerator:
             yield Permission(label)
 
     @staticmethod
-    def roles() -> Generator[Role, None, None]:
+    def roles() -> Iterator[Role]:
         names: List[str] = [
             'Client', 'Gestionnaire', 'Pizzaïolo', 'Livreur',
             'Opérateur de commande',
@@ -483,7 +483,7 @@ class DatabaseFeeder:
         return self.pizzeria_ids
 
     def _insert_members(self) -> List[int]:
-        gen_members: Generator[Member, None, None] = RandomDataGenerator\
+        gen_members: Iterator[Member] = RandomDataGenerator\
             .members(self.address_ids, self.pizzeria_ids, size=self.size)
         for member in gen_members:
             self.db.query(
@@ -502,7 +502,7 @@ class DatabaseFeeder:
         return self.member_ids
 
     def _insert_user_accounts(self) -> Dict[int, int]:
-        gen_user_accounts: Generator[UserAccount, None, None] = \
+        gen_user_accounts: Iterator[UserAccount] = \
             RandomDataGenerator.user_accounts(self.member_ids, size=self.size)
         for user_account in gen_user_accounts:
             self.db.query(
@@ -518,7 +518,7 @@ class DatabaseFeeder:
         return self.user_accounts
 
     def _insert_taken_orders(self) -> List[int]:
-        taken_orders: Generator[TakenOrder, None, None] = RandomDataGenerator\
+        taken_orders: Iterator[TakenOrder] = RandomDataGenerator\
             .taken_orders(self.member_ids, self.address_ids,
                           self.order_status_ids, size=self.size)
         for taken_order in taken_orders:
@@ -535,7 +535,7 @@ class DatabaseFeeder:
         return self.taken_order_ids
 
     def _insert_bills(self) -> None:
-        bills: Generator[Bill, None, None] = RandomDataGenerator\
+        bills: Iterator[Bill] = RandomDataGenerator\
                 .bills(self.taken_order_ids, size=self.size)
         for bill in bills:
             self.db.query(

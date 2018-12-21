@@ -5,11 +5,13 @@ verify_ssl = true
 
 [dev-packages]
 mypy = "*"
+pylint = "*"
 
 [packages]
 faker = "*"
 records = "*"
 psycopg2 = "*"
+passlib = "*"
 
 [requires]
 python_version = "3.7"
