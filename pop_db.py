@@ -458,6 +458,7 @@ class DatabaseFeeder:
     order_status_ids: List[int]
     keyword_ids: List[int]
     permission_ids: List[int]
+    bill_ids: List[int]
 
     def __init__(self, user: str, password: str,
                  host: str, dbname: str, size: int = 10) -> None:
@@ -499,6 +500,8 @@ class DatabaseFeeder:
         self._insert_roles()
         print('UPDATING MEMBERS ROLES')
         self._update_members_role()
+        print('UPDATING ORDERS BILLS')
+        self._update_order_bill()
         print('POPULATING ASSOCIATIVE ENTITIES')
         self._insert_relations_many_to_many()
         e = time.time()
@@ -584,7 +587,7 @@ class DatabaseFeeder:
         self.taken_order_ids = [r.id for r in rows]
         return self.taken_order_ids
 
-    def _insert_bills(self) -> None:
+    def _insert_bills(self) -> List[int]:
         bills: Iterator[Bill] = RandomDataGenerator\
                 .bills(self.taken_order_ids, size=self.size)
         for bill in bills:
@@ -593,6 +596,11 @@ class DatabaseFeeder:
                 order_id) VALUES (:emission_date, :total_amout_ati,
                 :order_id);''', **bill.__dict__
             )
+        rows: records.RecordCollection = self.db.query(
+            '''SELECT id FROM bill;'''
+        )
+        self.bill_ids = [r.id for r in rows]
+        return self.bill_ids
 
     def _insert_recipes(self) -> Dict[str, int]:
         for recipe in RandomDataGenerator.recipes():
@@ -658,6 +666,18 @@ class DatabaseFeeder:
                 WHERE id = :member_id''',
                 **{'member_id': r.id,
                    'role_id': random.choice(self.role_ids)}
+            )
+
+    def _update_order_bill(self) -> None:
+        rows: records.RecordCollection = self.db.query(
+            '''SELECT id FROM taken_order;'''
+        )
+        for r in rows:
+            self.db.query(
+                '''UPDATE taken_order set bill_id = :bill_id
+                WHERE id = :order_id''',
+                **{'order_id': r.id,
+                   'bill_id': random.choice(self.bill_ids)}
             )
 
     def _insert_order_status(self) -> List[int]:
