@@ -44,6 +44,7 @@ CREATE TABLE taken_order (
     id SERIAL PRIMARY KEY,
     member_id INTEGER NOT NULL,
     address_id INTEGER NOT NULL,
+    pizzeria_id INTEGER NOT NULL,
     bill_id INTEGER,
     status_id INTEGER NOT NULL,
     is_paid BOOLEAN NOT NULL DEFAULT FALSE
@@ -145,6 +146,10 @@ ALTER TABLE taken_order
     ADD CONSTRAINT fk_order_address
     FOREIGN KEY (address_id)
     REFERENCES address (id);
+ALTER TABLE taken_order
+    ADD CONSTRAINT fk_order_pizzeria
+    FOREIGN KEY (pizzeria_id)
+    REFERENCES pizzeria (id);
 ALTER TABLE bill
     ADD CONSTRAINT fk_bill_order
     FOREIGN KEY (order_id)

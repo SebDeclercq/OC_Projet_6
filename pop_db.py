@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+'''
+@desc    Script populating the OCP6 database (Openclassrooms DA Python)
+@author  SDQ <sdq@afnor.org>
+@version 1.1.0
+@date    2019-01-18
+@note    1.0.0 (2018-12-14) : first functional version
+@note    1.1.0 (2019-01-18) : debugging product table feed + adding a FK
+                              between orders and pizzerias
+'''
+
 from dataclasses import dataclass
 import os
 import random
@@ -15,6 +25,7 @@ import sqlalchemy
 
 @dataclass
 class Member:
+    '''Class representing tuples for the Member table'''
     name: str
     firstname: str
     works_at_pizzeria_id: Optional[int]  # REFERENCES Pizzeria
@@ -23,6 +34,8 @@ class Member:
 
 
 class FakeMember(Member):
+    '''Class for fake Member generation, by populating
+       the table Member for test)'''
     def __init__(self, pizzeria_id: int, address_id: int) -> None:
         fake: Faker = Faker('fr_FR')
         self.name = fake.last_name()
@@ -34,6 +47,7 @@ class FakeMember(Member):
 
 @dataclass
 class Address:
+    '''Class representing tuples for the Address table'''
     street_name: str
     home_number: str
     zip_code: str
@@ -41,6 +55,8 @@ class Address:
 
 
 class FakeAddress(Address):
+    '''Class for fake Address generation, by populating
+       the table Address for test)'''
     def __init__(self) -> None:
         fake: Faker = Faker('fr_FR')
         street: str = fake.address().split('\n')[0]
@@ -59,6 +75,7 @@ class FakeAddress(Address):
 
 @dataclass
 class UserAccount:
+    '''Class representing tuples for the UserAccount table'''
     email: str
     phone_nb: str
     member_id: int  # REFERENCES Member
@@ -66,6 +83,8 @@ class UserAccount:
 
 
 class FakeUserAccount(UserAccount):
+    '''Class for fake UserAccount generation, by populating
+       the table UserAccount for test)'''
     def __init__(self, member_id: int) -> None:
         fake: Faker = Faker('fr_FR')
         self.email = fake.email()
@@ -80,18 +99,23 @@ class FakeUserAccount(UserAccount):
 
 @dataclass
 class TakenOrder:
+    '''Class representing tuples for the TakenOrder table'''
     member_id: int  # REFERENCES Member
     address_id: int  # REFERENCES Address
     status_id: int  # REFERENCES OrderStatus
+    pizzeria_id: int  # REFERENCES Pizzeria
     is_paid: bool
     bill_id: Optional[int] = None  # REFERENCES Bill
 
 
 class FakeTakenOrder(TakenOrder):
-    def __init__(self, member_id: int, address_id: int,
+    '''Class for fake TakenOrder generation, by populating
+       the table TakenOrder for test)'''
+    def __init__(self, member_id: int, address_id: int, pizzeria_id: int,
                  order_status_ids: List[int]) -> None:
         self.member_id = member_id
         self.address_id = address_id
+        self.pizzeria_id = pizzeria_id
         self.status_id = random.choice(order_status_ids)
         self.is_paid = random.choice((True, False))
         self.bill_id = None
@@ -99,12 +123,15 @@ class FakeTakenOrder(TakenOrder):
 
 @dataclass
 class Bill:
+    '''Class representing tuples for the Bill table'''
     emission_date: str
     total_amout_ati: float
     order_id: int  # REFERENCES TakenOrder
 
 
 class FakeBill(Bill):
+    '''Class for fake Bill generation, by populating
+       the table Bill for test)'''
     def __init__(self, order_id: int) -> None:
         fake: Faker = Faker('fr_FR')
         self.emission_date = fake.date_time_this_decade()
@@ -116,6 +143,7 @@ class FakeBill(Bill):
 
 @dataclass
 class Product:
+    '''Class representing tuples for the Product table'''
     name: str
     barcode: str
     gram_weight: int
@@ -123,6 +151,8 @@ class Product:
 
 
 class FakeProduct(Product):
+    '''Class for fake Product generation, by populating
+       the table Product for test)'''
     def __init__(self, name: str) -> None:
         fake: Faker = Faker('fr_FR')
         self.name = name
@@ -135,12 +165,15 @@ class FakeProduct(Product):
 
 @dataclass
 class Pizzeria:
+    '''Class representing tuples for the Pizzeria table'''
     name: str
     phone_nb: str
     address_id: Optional[int]
 
 
 class FakePizzeria(Pizzeria):
+    '''Class for fake Pizzeria generation, by populating
+       the table Pizzeria for test)'''
     def __init__(self, name: str, address_id: int) -> None:
         fake: Faker = Faker('fr_FR')
         self.name = name
@@ -152,12 +185,15 @@ class FakePizzeria(Pizzeria):
 
 @dataclass
 class Recipe:
+    '''Class representing tuples for the Recipe table'''
     name: str
     description: str
     is_public: bool = False
 
 
 class FakeRecipe(Recipe):
+    '''Class for fake Recipe generation, by populating
+       the table Recipe for test)'''
     def __init__(self, name: str) -> None:
         fake: Faker = Faker('fr_FR')
         self.name = name
@@ -167,6 +203,7 @@ class FakeRecipe(Recipe):
 
 @dataclass
 class CatalogItem:
+    '''Class representing tuples for the CatalogItem table'''
     name: str
     description: str
     picture_file: str
@@ -178,6 +215,8 @@ class CatalogItem:
 
 
 class FakeCatalogItem(CatalogItem):
+    '''Class for fake CatalogItem generation, by populating
+       the table CatalogItem for test)'''
     def __init__(self, name: str, parent: str, parent_id: int) -> None:
         fake: Faker = Faker('fr_FR')
         self.name = name
@@ -200,25 +239,31 @@ class FakeCatalogItem(CatalogItem):
 
 @dataclass
 class Role:
+    '''Class representing tuples for the Role table'''
     name: str
 
 
 @dataclass
 class Permission:
+    '''Class representing tuples for the Permission table'''
     label: str
 
 
 @dataclass
 class OrderStatus:
+    '''Class representing tuples for the OrderStatus table'''
     label: str
 
 
 @dataclass
 class Keyword:
+    '''Class representing tuples for the Keyword table'''
     name: str
 
 
 class RandomDataGenerator:
+    '''Static class for random data generation. Holds a bunch of
+       rendering methods iterators containing Fake* objects'''
     @staticmethod
     def addresses(size: int = 10) -> Iterator[Address]:
         for i in range(size):
@@ -248,7 +293,7 @@ class RandomDataGenerator:
 
     @staticmethod
     def taken_orders(member_ids: List[int], address_ids: List[int],
-                     order_status_ids: List[int],
+                     pizzeria_ids: List[int], order_status_ids: List[int],
                      size: int = 10) -> Iterator[TakenOrder]:
         if len(member_ids) < size:
             raise ValueError('Not enough member_ids')
@@ -258,7 +303,10 @@ class RandomDataGenerator:
         random.shuffle(address_ids)
         for i in range(size):
             yield FakeTakenOrder(
-                member_ids[i], address_ids[i], order_status_ids
+                random.choice(member_ids),
+                random.choice(address_ids),
+                random.choice(pizzeria_ids),
+                order_status_ids
             )
 
     @staticmethod
@@ -399,6 +447,7 @@ class RandomDataGenerator:
 
 
 class DatabaseFeeder:
+    '''Main class used to feed all tables in the database'''
     address_ids: List[int]
     member_ids: List[int]
     pizzeria_ids: List[int]
@@ -520,12 +569,13 @@ class DatabaseFeeder:
     def _insert_taken_orders(self) -> List[int]:
         taken_orders: Iterator[TakenOrder] = RandomDataGenerator\
             .taken_orders(self.member_ids, self.address_ids,
-                          self.order_status_ids, size=self.size)
+                          self.pizzeria_ids, self.order_status_ids,
+                          size=self.size)
         for taken_order in taken_orders:
             self.db.query(
                 '''INSERT INTO taken_order (member_id, address_id,
-                status_id, is_paid, bill_id) VALUES (:member_id, :address_id,
-                :status_id, :is_paid, :bill_id)''',
+                pizzeria_id, status_id, is_paid, bill_id) VALUES (:member_id,
+                :address_id, :pizzeria_id, :status_id, :is_paid, :bill_id)''',
                 **taken_order.__dict__
             )
         rows: records.RecordCollection = self.db.query(
@@ -569,7 +619,7 @@ class DatabaseFeeder:
                 '''SELECT id FROM product;'''
             )
             self.product_ids = [r.id for r in rows]
-            return self.product_ids
+        return self.product_ids
 
     def _insert_catalog_items(self) -> List[int]:
         for item in RandomDataGenerator.catalog_items(self.recipes):
